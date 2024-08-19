@@ -1,14 +1,9 @@
-# castle/player.py
 import pygame
-import time
+import random
+import math
 
 class Player:
     def __init__(self, playable_area_size):
-        """
-        Initializes the player.
-        Args:
-        playable_area_size (int): The size of the playable area.
-        """
         self.original_speed = 5
         self.speed = self.original_speed
         self.size = 25
@@ -28,15 +23,21 @@ class Player:
         self.spawn_interval = 2000
         self.damage = 2  # Default damage
         self.shoot_interval = 500  # Default shoot interval
+        
+        # Additional attributes
+        self.fling_speed = 0
+        self.fling_duration = 0.1 # Duration in seconds
+        self.fling_distance = 10
+        self.fling_target = None
+        self.is_flinging = False
+        self.fling_damage = 1
+
 
     def handle_movement(self, keys, castle_pos, castle_size):
-        """
-        Handles player movement based on keyboard input.
-        Args:
-        keys: The state of the keyboard.
-        castle_pos: The position of the castle.
-        castle_size: The size of the castle.
-        """
+        if self.is_flinging:
+            self.update_fling()
+            return
+        
         if keys[pygame.K_LEFT] and self.position[0] - self.speed - self.size > 0:
             new_pos_x = self.position[0] - self.speed
             if not self.collides_with_castle(new_pos_x, self.position[1], castle_pos, castle_size) and not self.collides_with_border(new_pos_x, self.position[1]):
@@ -128,19 +129,42 @@ class Player:
                     stardust_manager.star_dust_list.remove(star_dust)
                     stardust_manager.active_power_up = None
 
+    def update_fling(self):
+        if self.fling_target:
+            dx = self.fling_target[0] - self.position[0]
+            dy = self.fling_target[1] - self.position[1]
+            distance = math.hypot(dx, dy)
+            if distance < self.fling_speed:
+                self.position = self.fling_target
+                self.is_flinging = False
+                self.fling_target = None
+            else:
+                direction_x = dx / distance
+                direction_y = dy / distance
+                self.position[0] += direction_x * self.fling_speed
+                self.position[1] += direction_y * self.fling_speed
+                # Ensure the new position doesn't collide with walls
+                self.position[0] = max(self.size, min(self.playable_area_size - self.size, self.position[0]))
+                self.position[1] = max(self.size, min(self.playable_area_size - self.size, self.position[1]))
+
+    def fling(self, direction):
+        destination_x = self.position[0] + direction[0] * self.fling_distance
+        destination_y = self.position[1] + direction[1] * self.fling_distance
+        destination_x = max(self.size, min(self.playable_area_size - self.size, destination_x))
+        destination_y = max(self.size, min(self.playable_area_size - self.size, destination_y))
+
+        self.fling_target = [destination_x, destination_y]
+        total_distance = math.hypot(destination_x - self.position[0], destination_y - self.position[1])
+        duration =  self.fling_duration * 60  # 1.5 seconds at 60 FPS
+        self.fling_speed = total_distance / duration
+        self.is_flinging = True
+        self.take_damage(self.fling_damage)  # Inflict 1 damage on the player upon being flung
+
     def shoot_laser(self):
-        """
-        Shoots a laser.
-        """
         self.lasers.append({'pos': self.position[:], 'dir': self.last_direction})
         self.collected_star_dust -= self.laser_cost
 
     def handle_laser_movement(self, stardust_manager):
-        """
-        Handles the movement of lasers.
-        Args:
-        stardust_manager (StarDustManager): The stardust manager containing all stardust objects.
-        """
         for laser in self.lasers[:]:
             laser['pos'][0] += laser['dir'][0] * 10
             laser['pos'][1] += laser['dir'][1] * 10
@@ -152,18 +176,10 @@ class Player:
                 self.lasers.remove(laser)
 
     def take_damage(self, amount):
-        """
-        Reduces the player's health by the specified amount.
-        Args:
-        amount (int): The amount of damage to take.
-        """
         if not self.invincibility_end_time or pygame.time.get_ticks() > self.invincibility_end_time:
             self.health = max(self.health - amount, 0)
 
     def update_status(self):
-        """
-        Updates the player's status, especially after effects like boosts.
-        """
         if self.boost_end_time and pygame.time.get_ticks() > self.boost_end_time:
             self.speed = self.original_speed
             self.boost_end_time = None
@@ -175,3 +191,18 @@ class Player:
         if self.rapid_fire_end_time and pygame.time.get_ticks() > self.rapid_fire_end_time:
             self.shoot_interval = 500  # Reset shoot interval to default
             self.rapid_fire_end_time = None
+
+def fling_player(player, castle_rect):
+    # Calculate the direction vector from the castle to the player
+    direction = [
+        player.position[0] - castle_rect.centerx,
+        player.position[1] - castle_rect.centery
+    ]
+    
+    # Normalize the direction vector
+    distance = math.hypot(direction[0], direction[1])
+    if distance != 0:
+        direction = [direction[0] / distance, direction[1] / distance]
+    
+    # Fling the player away from the castle
+    player.fling(direction)

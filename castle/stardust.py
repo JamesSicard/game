@@ -4,12 +4,12 @@ import random
 class StarDustManager:
     STAR_DUST_SIZE = 30
     BOOST_DURATION = 10
-    INVINCIBILITY_DURATION = 10
-    DOUBLE_DAMAGE_DURATION = 10
-    RAPID_FIRE_DURATION = 10
+    INVINCIBILITY_DURATION = 15
+    DOUBLE_DAMAGE_DURATION = 15
+    RAPID_FIRE_DURATION = 15
     CASTLE_HEALTH = 25
     CASTLE_SIZE = 25
-    STAR_DUST_CAP = 100  # Cap for the number of star dust on the playable area at one time
+    STAR_DUST_CAP = 101  # Cap for the number of star dust on the playable area at one time
 
     def __init__(self, playable_area_size, castle_size):
         """
@@ -23,7 +23,7 @@ class StarDustManager:
         self.playable_area_size = playable_area_size
         self.castle_size = castle_size
         self.arrow1_ratio = 3  # Ensuring ratio of arrow1 to boost is 3:1
-        self.arrow_stack_ratio = 5  # arrow_stack appears at a 1:5 ratio compared to arrow1
+        self.arrow_stack_ratio = 4  # arrow_stack appears at a 1:5 ratio compared to arrow1
         self.mushroom_ratio = 4  # Mushroom appears at a 1:4 ratio compared to arrow1
         self.total_castles_destroyed = 0
 

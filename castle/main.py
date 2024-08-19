@@ -1,9 +1,9 @@
 # castle/main.py
-import pygame
+import pygame # type: ignore
 import sys
 import random
 import math
-from player import Player
+from player import Player, fling_player  # Import the fling_player function
 from stardust import StarDustManager
 from render import Renderer
 from utils import gain_experience, reset_game
@@ -14,6 +14,7 @@ from castle import Castle  # Import the Castle class
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 800
 PLAYABLE_AREA_SIZE = 5000
+FLING_DISTANCE = 90  # the distance you need to be from the castle to be flung
 
 # Damage multiplier starts at 1.0
 castle_damage_multiplier = 1.0
@@ -40,6 +41,26 @@ def handle_castle_laser_collision(player, castle, stardust_manager, castle_laser
             castle.drop_items(stardust_manager)  # Drop items around the castle's position
             castle.reset()
             castle_damage_multiplier += 0.1  # Increase the damage multiplier with each new castle
+
+    player_rect = pygame.Rect(
+        player.position[0] - player.size,
+        player.position[1] - player.size,
+        player.size * 2,
+        player.size * 2
+    )
+    castle_rect = pygame.Rect(
+        castle.position[0],
+        castle.position[1],
+        castle.size[0],
+        castle.size[1]
+    )
+    # Calculate distance between player and castle center
+    distance_to_castle = math.sqrt(
+        (player.position[0] - castle.position[0]) ** 2 +
+        (player.position[1] - castle.position[1]) ** 2
+    )
+    if player_rect.colliderect(castle_rect) or distance_to_castle < FLING_DISTANCE:
+        fling_player(player, castle_rect)
 
 def handle_castle_laser_movement(castle_lasers, player):
     """
@@ -164,29 +185,31 @@ def main():
         if not paused and not game_over:
             keys = pygame.key.get_pressed()
             player.handle_movement(keys, castle.position, CASTLE_SIZE)
-            player.check_collisions(stardust_manager)
-            player.handle_laser_movement(stardust_manager)
-            player.update_status()  # This will update the player's status, including resetting the speed if boost ends
-            stardust_manager.spawn_star_dust()
-            
-            # Handle wizard manager updates, including spawning new wizards based on the player's level
-            wizard_manager.update(castle.position, CASTLE_SIZE)
 
-            # Handle laser collision with the castle
-            handle_castle_laser_collision(player, castle, stardust_manager, castle_lasers)
+            if not player.is_flinging:  # Ensure normal updates only if not flinging
+                player.check_collisions(stardust_manager)
+                player.handle_laser_movement(stardust_manager)
+                player.update_status()  # This will update the player's status, including resetting the speed if boost ends
+                stardust_manager.spawn_star_dust()
+                
+                # Handle wizard manager updates, including spawning new wizards based on the player's level
+                wizard_manager.update(castle.position, CASTLE_SIZE)
 
-            # Handle castle laser movement
-            handle_castle_laser_movement(castle_lasers, player)
+                # Handle laser collision with the castle
+                handle_castle_laser_collision(player, castle, stardust_manager, castle_lasers)
 
-            # Handle wizard orb collision with player
-            handle_wizard_orb_collision(player, wizard_manager)
+                # Handle castle laser movement
+                handle_castle_laser_movement(castle_lasers, player)
 
-            # Handle player laser collision with wizard
-            handle_player_laser_collision_with_wizard(player, wizard_manager)
+                # Handle wizard orb collision with player
+                handle_wizard_orb_collision(player, wizard_manager)
 
-            # Check for game over condition
-            if player.health <= 0:
-                game_over = True
+                # Handle player laser collision with wizard
+                handle_player_laser_collision_with_wizard(player, wizard_manager)
+
+                # Check for game over condition
+                if player.health <= 0:
+                    game_over = True
 
             # Clear screen
             screen.fill((0, 0, 0))
