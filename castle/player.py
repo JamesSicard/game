@@ -4,11 +4,6 @@ import time
 
 class Player:
     def __init__(self, playable_area_size):
-        """
-        Initializes the player.
-        Args:
-        playable_area_size (int): The size of the playable area.
-        """
         self.original_speed = 5
         self.speed = self.original_speed
         self.size = 25
@@ -17,26 +12,20 @@ class Player:
         self.health = 100
         self.max_health = 100
         self.collected_star_dust = 0
-        self.boost_end_time = None  # Keep track of when boost ends
-        self.invincibility_end_time = None  # Track invincibility duration
-        self.double_damage_end_time = None  # Track double damage duration
-        self.rapid_fire_end_time = None  # Track rapid-fire duration
+        self.boost_end_time = None
+        self.invincibility_end_time = None
+        self.double_damage_end_time = None
+        self.rapid_fire_end_time = None
         self.laser_cost = 1
         self.lasers = []
         self.playable_area_size = playable_area_size
         self.last_spawn_time = pygame.time.get_ticks()
         self.spawn_interval = 2000
-        self.damage = 2  # Default damage
-        self.shoot_interval = 500  # Default shoot interval
+        self.damage = 2
+        self.shoot_interval = 200
+        self.last_shot_time = 0  # Track the last shot time
 
     def handle_movement(self, keys, castle_pos, castle_size):
-        """
-        Handles player movement based on keyboard input.
-        Args:
-        keys: The state of the keyboard.
-        castle_pos: The position of the castle.
-        castle_size: The size of the castle.
-        """
         if keys[pygame.K_LEFT] and self.position[0] - self.speed - self.size > 0:
             new_pos_x = self.position[0] - self.speed
             if not self.collides_with_castle(new_pos_x, self.position[1], castle_pos, castle_size) and not self.collides_with_border(new_pos_x, self.position[1]):
@@ -59,39 +48,16 @@ class Player:
                 self.last_direction = (0, 1)
 
     def collides_with_castle(self, x, y, castle_pos, castle_size):
-        """
-        Checks if the player collides with the castle.
-        Args:
-        x: The x position of the player.
-        y: The y position of the player.
-        castle_pos: The position of the castle.
-        castle_size: The size of the castle.
-        Returns:
-        bool: True if the player collides with the castle, False otherwise.
-        """
         player_rect = pygame.Rect(x - self.size, y - self.size, self.size * 2, self.size * 2)
         adjusted_castle_hitbox = pygame.Rect(castle_pos[0], castle_pos[1], castle_size[0], castle_size[1])
         return player_rect.colliderect(adjusted_castle_hitbox)
 
     def collides_with_border(self, x, y):
-        """
-        Checks if the player collides with the border.
-        Args:
-        x: The x position of the player.
-        y: The y position of the player.
-        Returns:
-        bool: True if the player collides with the border, False otherwise.
-        """
-        border_thickness = 25  # Set the border thickness to match wall image size
+        border_thickness = 25
         return x - self.size < border_thickness or x + self.size > self.playable_area_size - border_thickness or \
             y - self.size < border_thickness or y + self.size > self.playable_area_size - border_thickness
 
     def check_collisions(self, stardust_manager):
-        """
-        Checks for collisions with stardust objects.
-        Args:
-        stardust_manager (StarDustManager): The stardust manager containing all stardust objects.
-        """
         for star_dust in stardust_manager.star_dust_list[:]:
             dx = self.position[0] - star_dust['pos'][0]
             dy = self.position[1] - star_dust['pos'][1]
@@ -102,7 +68,7 @@ class Player:
                     stardust_manager.star_dust_list.remove(star_dust)
                 elif star_dust['type'] == 'boost':
                     self.boost_end_time = pygame.time.get_ticks() + stardust_manager.BOOST_DURATION * 1000
-                    self.speed = self.original_speed * 1.5  # Increase speed by 50%
+                    self.speed = self.original_speed * 1.5
                     stardust_manager.star_dust_list.remove(star_dust)
                 elif star_dust['type'] == 'health':
                     self.health = min(self.health + 10, self.max_health)
@@ -111,7 +77,7 @@ class Player:
                     self.collected_star_dust = min(self.collected_star_dust + 5, 100)
                     stardust_manager.star_dust_list.remove(star_dust)
                 elif star_dust['type'] == 'mushroom':
-                    self.health = min(self.health + 5, self.max_health)  # Mushroom adds 5 health to the player
+                    self.health = min(self.health + 5, self.max_health)
                     stardust_manager.star_dust_list.remove(star_dust)
                 elif star_dust['type'] == 'invincibility':
                     self.invincibility_end_time = pygame.time.get_ticks() + stardust_manager.INVINCIBILITY_DURATION * 1000
@@ -119,28 +85,24 @@ class Player:
                     stardust_manager.active_power_up = None
                 elif star_dust['type'] == 'double_damage':
                     self.double_damage_end_time = pygame.time.get_ticks() + stardust_manager.DOUBLE_DAMAGE_DURATION * 1000
-                    self.damage = 4  # Double the damage
+                    self.damage = 4
                     stardust_manager.star_dust_list.remove(star_dust)
                     stardust_manager.active_power_up = None
                 elif star_dust['type'] == 'rapid_fire':
                     self.rapid_fire_end_time = pygame.time.get_ticks() + stardust_manager.RAPID_FIRE_DURATION * 1000
-                    self.shoot_interval = 200  # Reduce shoot interval for rapid fire
+                    self.shoot_interval = 100
+                    self.unlimited_arrows = True  # Enable unlimited arrows
                     stardust_manager.star_dust_list.remove(star_dust)
                     stardust_manager.active_power_up = None
 
     def shoot_laser(self):
-        """
-        Shoots a laser.
-        """
-        self.lasers.append({'pos': self.position[:], 'dir': self.last_direction})
-        self.collected_star_dust -= self.laser_cost
+        if self.rapid_fire_end_time and pygame.time.get_ticks() < self.rapid_fire_end_time:
+            self.lasers.append({'pos': self.position[:], 'dir': self.last_direction})
+        elif self.collected_star_dust >= self.laser_cost:
+            self.lasers.append({'pos': self.position[:], 'dir': self.last_direction})
+            self.collected_star_dust -= self.laser_cost
 
     def handle_laser_movement(self, stardust_manager):
-        """
-        Handles the movement of lasers.
-        Args:
-        stardust_manager (StarDustManager): The stardust manager containing all stardust objects.
-        """
         for laser in self.lasers[:]:
             laser['pos'][0] += laser['dir'][0] * 10
             laser['pos'][1] += laser['dir'][1] * 10
@@ -152,26 +114,28 @@ class Player:
                 self.lasers.remove(laser)
 
     def take_damage(self, amount):
-        """
-        Reduces the player's health by the specified amount.
-        Args:
-        amount (int): The amount of damage to take.
-        """
         if not self.invincibility_end_time or pygame.time.get_ticks() > self.invincibility_end_time:
             self.health = max(self.health - amount, 0)
 
     def update_status(self):
-        """
-        Updates the player's status, especially after effects like boosts.
-        """
         if self.boost_end_time and pygame.time.get_ticks() > self.boost_end_time:
             self.speed = self.original_speed
             self.boost_end_time = None
         if self.invincibility_end_time and pygame.time.get_ticks() > self.invincibility_end_time:
             self.invincibility_end_time = None
         if self.double_damage_end_time and pygame.time.get_ticks() > self.double_damage_end_time:
-            self.damage = 2  # Reset damage
+            self.damage = 2
             self.double_damage_end_time = None
         if self.rapid_fire_end_time and pygame.time.get_ticks() > self.rapid_fire_end_time:
-            self.shoot_interval = 500  # Reset shoot interval to default
+            self.shoot_interval = 200
+            self.unlimited_arrows = False  # Disable unlimited arrows
             self.rapid_fire_end_time = None
+ # Handle shooting when spacebar is held down
+    def handle_shooting(self, keys):
+        if keys[pygame.K_SPACE]:
+            #
+            now = pygame.time.get_ticks()
+            # Check if the player has rapid fire power-up and if the shoot interval has passed
+            if now - self.last_shot_time >= self.shoot_interval:
+                self.shoot_laser()
+                self.last_shot_time = now

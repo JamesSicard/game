@@ -16,7 +16,7 @@ BOOST_DURATION = 10  # Adjust to your game's boost duration
 class Renderer:
     def __init__(self, screen, background_img, star_img, boost_img, arrow1_img, castle_img,
                  health_img, arrow_img, arrow_stack_img, mushroom_img, wall_img, laser_img,
-                 invincibility_img, double_damage_img, rapid_fire_img,
+                 invincibility_img, double_damage_img, rapid_fire_img, menu_img,
                  screen_width, screen_height, playable_area_size):
         """
         Initializes the Renderer.
@@ -36,6 +36,7 @@ class Renderer:
             invincibility_img (pygame.Surface): The invincibility power-up image.
             double_damage_img (pygame.Surface): The double damage power-up image.
             rapid_fire_img (pygame.Surface): The rapid fire power-up image.
+            menu_img (pygame.Surface): The menu button image.
             screen_width (int): The width of the screen.
             screen_height (int): The height of the screen.
             playable_area_size (int): The size of the playable area.
@@ -55,9 +56,11 @@ class Renderer:
         self.invincibility_img = invincibility_img
         self.double_damage_img = double_damage_img
         self.rapid_fire_img = rapid_fire_img
+        self.menu_img = menu_img
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.playable_area_size = playable_area_size
+        self.menu_button_rect = self.menu_img.get_rect(bottomright=(screen_width, screen_height))
 
     def draw_scene(self, player, stardust_manager, castle_pos, castle_health, wizard_manager):
         """
@@ -79,6 +82,13 @@ class Renderer:
         self.draw_castle(castle_pos, castle_health, offset_x, offset_y)
         self.draw_ui(player)
         self.draw_minimap(player.position, castle_pos, wizard_manager)
+        self.draw_menu_button()
+
+    def draw_menu_button(self):
+        """
+        Draws the menu button in the bottom right corner.
+        """
+        self.screen.blit(self.menu_img, self.menu_button_rect.topleft)
 
     def draw_wizards(self, wizard_manager, player):
         """
@@ -129,11 +139,28 @@ class Renderer:
             player (Player): The player object.
         """
         scaled_star_img = pygame.transform.scale(self.star_img, (player.size * 2, player.size * 2))
+        # Apply invincibility effect
         if player.invincibility_end_time and pygame.time.get_ticks() < player.invincibility_end_time:
-            # Apply a gold glow effect for invincibility
+            # Apply a gold glow effect to outline the player
             gold_glow = pygame.Surface(scaled_star_img.get_size())
             gold_glow.fill((255, 215, 0))  # Gold color
             scaled_star_img.blit(gold_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+        # Apply double damage effect
+        if player.double_damage_end_time and pygame.time.get_ticks() < player.double_damage_end_time:
+            # Apply a red glow effect to outline the player
+            red_glow = pygame.Surface(scaled_star_img.get_size())
+            red_glow.fill((255, 0, 0))  # Red color
+            scaled_star_img.blit(red_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+        # Apply rapid fire effect
+        if player.rapid_fire_end_time and pygame.time.get_ticks() < player.rapid_fire_end_time:
+            # Apply a blue glow effect to outline the player
+            blue_glow = pygame.Surface(scaled_star_img.get_size())
+            blue_glow.fill((0, 0, 255))  # Blue color
+            scaled_star_img.blit(blue_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+            
+            # gold_glow = pygame.Surface(scaled_star_img.get_size())
+            # gold_glow.fill((255, 215, 0))  # Gold color
+            # scaled_star_img.blit(gold_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
         self.screen.blit(scaled_star_img, (self.screen_width // 2 - player.size, self.screen_height // 2 - player.size))
         # Player health bar
         health_bar_length = player.size * 2
@@ -290,3 +317,5 @@ class Renderer:
         smaller_font = pygame.font.Font(None, 50)
         restart_text = smaller_font.render('Press R to Restart', True, (255, 255, 255))
         self.screen.blit(restart_text, (self.screen_width // 2 - restart_text.get_width() // 2, self.screen_height // 2))
+        quit_text = smaller_font.render('Press Q to Quit', True, (255, 255, 255))
+        self.screen.blit(quit_text, (self.screen_width // 2 - quit_text.get_width() // 2, self.screen_height // 2 + 50))

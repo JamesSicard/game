@@ -75,7 +75,7 @@ class Wizard:
         distance = math.sqrt(direction_vector[0]**2 + direction_vector[1]**2)
 
         # Maintain a minimum distance of 30 pixels from the player
-        if distance > 30:
+        if distance > 100:
             normalized_direction = (direction_vector[0] / distance, direction_vector[1] / distance)
             new_pos_x = wizard.position[0] + normalized_direction[0] * wizard.speed
             new_pos_y = wizard.position[1] + normalized_direction[1] * wizard.speed
