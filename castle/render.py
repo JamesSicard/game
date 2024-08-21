@@ -83,6 +83,7 @@ class Renderer:
         self.draw_ui(player)
         self.draw_minimap(player.position, castle_pos, wizard_manager)
         self.draw_menu_button()
+        self.draw_game_over(player)
 
     def draw_menu_button(self):
         """
@@ -141,26 +142,23 @@ class Renderer:
         scaled_star_img = pygame.transform.scale(self.star_img, (player.size * 2, player.size * 2))
         # Apply invincibility effect
         if player.invincibility_end_time and pygame.time.get_ticks() < player.invincibility_end_time:
-            # Apply a gold glow effect to outline the player
+            # Apply a gold glow aura beind the player
             gold_glow = pygame.Surface(scaled_star_img.get_size())
             gold_glow.fill((255, 215, 0))  # Gold color
             scaled_star_img.blit(gold_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
-        # Apply double damage effect
-        if player.double_damage_end_time and pygame.time.get_ticks() < player.double_damage_end_time:
-            # Apply a red glow effect to outline the player
-            red_glow = pygame.Surface(scaled_star_img.get_size())
-            red_glow.fill((255, 0, 0))  # Red color
-            scaled_star_img.blit(red_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
-        # Apply rapid fire effect
-        if player.rapid_fire_end_time and pygame.time.get_ticks() < player.rapid_fire_end_time:
-            # Apply a blue glow effect to outline the player
-            blue_glow = pygame.Surface(scaled_star_img.get_size())
-            blue_glow.fill((0, 0, 255))  # Blue color
-            scaled_star_img.blit(blue_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
-            
-            # gold_glow = pygame.Surface(scaled_star_img.get_size())
-            # gold_glow.fill((255, 215, 0))  # Gold color
-            # scaled_star_img.blit(gold_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+        # # Apply double damage effect
+        # if player.double_damage_end_time and pygame.time.get_ticks() < player.double_damage_end_time:
+        #     # Apply a red glow effect to outline the player
+        #     red_glow = pygame.Surface(scaled_star_img.get_size())
+        #     red_glow.fill((255, 0, 0))  # Red color
+        #     scaled_star_img.blit(red_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+        # # Apply rapid fire effect
+        # if player.rapid_fire_end_time and pygame.time.get_ticks() < player.rapid_fire_end_time:
+        #     # Apply a blue glow effect to outline the player
+        #     blue_glow = pygame.Surface(scaled_star_img.get_size())
+        #     blue_glow.fill((0, 0, 255))  # Blue color
+        #     scaled_star_img.blit(blue_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+
         self.screen.blit(scaled_star_img, (self.screen_width // 2 - player.size, self.screen_height // 2 - player.size))
         # Player health bar
         health_bar_length = player.size * 2
@@ -318,4 +316,18 @@ class Renderer:
         restart_text = smaller_font.render('Press R to Restart', True, (255, 255, 255))
         self.screen.blit(restart_text, (self.screen_width // 2 - restart_text.get_width() // 2, self.screen_height // 2))
         quit_text = smaller_font.render('Press Q to Quit', True, (255, 255, 255))
+        #this will exit the game when the player presses the Q key
+        self.screen.blit(quit_text, (self.screen_width // 2 - quit_text.get_width() // 2, self.screen_height // 2 + 50))
+   
+    def draw_game_over(self, player):
+        #ony display the game over screen if the player is dead
+        if player.health > 0:
+            return
+        font_large = pygame.font.Font(None, 74)
+        font_small = pygame.font.Font(None, 50)
+        loser_text = font_large.render('LOSER', True, (255, 0, 0))
+        restart_text = font_small.render('Press (R) to Restart', True, (255, 255, 255))
+        quit_text = font_small.render('Press (Q) to Quit', True, (255, 255, 255))
+        self.screen.blit(loser_text, (self.screen_width // 2 - loser_text.get_width() // 2, self.screen_height // 2 - 100))
+        self.screen.blit(restart_text, (self.screen_width // 2 - restart_text.get_width() // 2, self.screen_height // 2))
         self.screen.blit(quit_text, (self.screen_width // 2 - quit_text.get_width() // 2, self.screen_height // 2 + 50))
