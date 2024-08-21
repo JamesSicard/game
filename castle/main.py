@@ -29,7 +29,7 @@ def handle_castle_laser_collision(player, castle, stardust_manager, castle_laser
             normalized_direction = (direction_vector[0] / distance, direction_vector[1] / distance)
             castle_lasers.append({'pos': list(castle.position), 'dir': normalized_direction})
         if castle.health <= 0:
-            gain_experience(player, 2)
+            gain_experience(player, 10)
             castle.drop_items(stardust_manager)
             castle.reset()
             castle_damage_multiplier += 0.1
@@ -71,6 +71,7 @@ def draw_game_over(screen):
     font_small = pygame.font.Font(None, 50)
     loser_text = font_large.render('LOSER', True, (255, 0, 0))
     restart_text = font_small.render('Press (R) to Restart', True, (255, 255, 255))
+    quit_text = font_small.render('Press (Q) to Quit', True, (255, 255, 255))
     screen.blit(loser_text, (SCREEN_WIDTH // 2 - loser_text.get_width() // 2, SCREEN_HEIGHT // 2 - 100))
     screen.blit(restart_text, (SCREEN_WIDTH // 2 - restart_text.get_width() // 2, SCREEN_HEIGHT // 2))
 
@@ -98,7 +99,7 @@ def main():
 
     castle_rect = castle_img.get_rect()
     CASTLE_SIZE = castle_rect.size
-
+    
     player = Player(playable_area_size=PLAYABLE_AREA_SIZE)
     stardust_manager = StarDustManager(playable_area_size=PLAYABLE_AREA_SIZE, castle_size=CASTLE_SIZE)
     renderer = Renderer(
@@ -135,6 +136,12 @@ def main():
                     elif paused and event.key == pygame.K_r:
                         reset_game(player, stardust_manager)
                         paused = False
+                        wizard_manager.reset()
+                        castle.reset()
+                    elif paused and event.key == pygame.K_q:
+                        # Quit the game
+                        pygame.quit()
+                        sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = event.pos
                 if renderer.menu_button_rect.collidepoint(mouse_pos):
@@ -153,19 +160,21 @@ def main():
             handle_castle_laser_movement(castle_lasers, player)
             handle_wizard_orb_collision(player, wizard_manager)
             handle_player_laser_collision_with_wizard(player, wizard_manager)
-
-            if player.health <= 0:
-                game_over = True
-
+            
+            if not paused and player.health <= 0:
+                game_over = True            
             screen.fill((0, 0, 0))
+
             if not game_over:
                 renderer.draw_scene(player, stardust_manager, castle.position, castle.health, wizard_manager)
                 renderer.draw_castle_lasers(castle_lasers, player.position[0] - SCREEN_WIDTH // 2, player.position[1] - SCREEN_HEIGHT // 2)
                 castle.draw_castle(screen, castle_img, player.position[0] - SCREEN_WIDTH // 2, player.position[1] - SCREEN_HEIGHT // 2)
                 renderer.draw_menu_button()
                 wizard_manager.draw(screen, player.position[0] - SCREEN_WIDTH // 2, player.position[1] - SCREEN_HEIGHT // 2)
+            # Draw game over screen
             if game_over:
                 draw_game_over(screen)
+                
             elif paused:
                 renderer.draw_menu()
 

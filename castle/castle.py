@@ -25,11 +25,27 @@ class Castle:
         Returns:
             list: A list containing the x and y coordinates.
         """
+        # Generate a random position for the castle can not be placed over the player
         margin = 10
         x = random.randint(margin, self.playable_area_size - self.size[0] - margin)
         y = random.randint(margin, self.playable_area_size - self.size[1] - margin)
         return [x, y]
+    #check player position
+    def generate_random_position(self):
+        """
+        Generates a random position for the castle within the playable area.
 
+        Returns:
+            list: A list containing the x and y coordinates.
+        """
+        x = random.randint(0, self.playable_area_size - self.size[0])
+        y = random.randint(0, self.playable_area_size - self.size[1])
+            #if position is over player, generate new position
+        if x > 400 and x < 600 and y > 400 and y < 600:
+            return self.generate_random_position()
+        else:
+            return [x, y]
+    
     def take_damage(self, amount):
         """
         Reduces the castle's health by the specified amount.
@@ -68,8 +84,8 @@ class Castle:
         Args:
             stardust_manager (StarDustManager): The stardust manager to handle creating star dust.
         """
-        item_offset_range = 30  # The range within which items will be spread out
-        for _ in range(2):  # Drop two 'arrow_stack' items
+        item_offset_range = 50  # The range within which items will be spread out
+        for _ in range(4):  # Drop two 'arrow_stack' items
             offset_x = random.randint(-item_offset_range, item_offset_range)
             offset_y = random.randint(-item_offset_range, item_offset_range)
             item_position = [self.position[0] + offset_x, self.position[1] + offset_y]

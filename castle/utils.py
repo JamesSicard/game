@@ -28,6 +28,7 @@ def gain_experience(player, amount):
     while player.current_experience >= calculate_exp_needed(player.current_level) and player.current_level < 25:
         player.current_experience -= calculate_exp_needed(player.current_level)
         player.current_level += 1
+        player.max_health += 5
 
 def reset_game(player, stardust_manager):
     """
@@ -47,7 +48,7 @@ def reset_game(player, stardust_manager):
     player.current_level = 1
     player.current_experience = 0
     player.health = player.max_health
-    player.last_spawn_time = pygame.time.get_ticks()
+    player.last_spawn_time = pygame.time.get_ticks()   
 
     # Reset stardust
     stardust_manager.star_dust_list = [stardust_manager.create_star_dust() for _ in range(40)]
