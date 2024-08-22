@@ -1,4 +1,4 @@
-# castle/player.py
+# player.py
 import pygame
 import time
 
@@ -22,6 +22,7 @@ class Player:
         self.last_spawn_time = pygame.time.get_ticks()
         self.spawn_interval = 2000
         self.damage = 2
+        self.double_damage = self.damage * 2
         self.shoot_interval = 200
         self.last_shot_time = 0  # Track the last shot time
 
@@ -85,7 +86,6 @@ class Player:
                     stardust_manager.active_power_up = None
                 elif star_dust['type'] == 'double_damage':
                     self.double_damage_end_time = pygame.time.get_ticks() + stardust_manager.DOUBLE_DAMAGE_DURATION * 1000
-                    self.damage = 4
                     stardust_manager.star_dust_list.remove(star_dust)
                     stardust_manager.active_power_up = None
                 elif star_dust['type'] == 'rapid_fire':
@@ -95,14 +95,21 @@ class Player:
                     stardust_manager.star_dust_list.remove(star_dust)
                     stardust_manager.active_power_up = None
 
+    def get_damage(self):
+        base_damage = 5  # Base damage per laser
+        if self.double_damage_end_time and pygame.time.get_ticks() < self.double_damage_end_time:
+            return base_damage * 2
+        else:
+            return base_damage
+
     def shoot_laser(self):
         if self.rapid_fire_end_time and pygame.time.get_ticks() < self.rapid_fire_end_time:
-            self.lasers.append({'pos': self.position[:], 'dir': self.last_direction})
+            self.lasers.append({'pos': self.position[:], 'dir': self.last_direction, 'damage': self.get_damage()})
         elif self.collected_star_dust >= self.laser_cost:
-            self.lasers.append({'pos': self.position[:], 'dir': self.last_direction})
+            self.lasers.append({'pos': self.position[:], 'dir': self.last_direction, 'damage': self.get_damage()})
             self.collected_star_dust -= self.laser_cost
 
-    def handle_laser_movement(self, stardust_manager):
+    def handle_laser_movement(self, stardust_manager, wizard_manager, castle):
         for laser in self.lasers[:]:
             laser['pos'][0] += laser['dir'][0] * 10
             laser['pos'][1] += laser['dir'][1] * 10
@@ -110,7 +117,15 @@ class Player:
                     laser['pos'][1] < 0 or laser['pos'][1] > self.playable_area_size:
                 self.lasers.remove(laser)
                 continue
+
             if stardust_manager.check_laser_collision(laser['pos']):
+                self.lasers.remove(laser)
+
+            if wizard_manager.check_laser_collision(laser['pos'], laser['damage']):
+                self.lasers.remove(laser)
+
+            if castle.collides_with(laser['pos']):
+                castle.take_damage(laser['damage'])
                 self.lasers.remove(laser)
 
     def take_damage(self, amount):
@@ -124,18 +139,16 @@ class Player:
         if self.invincibility_end_time and pygame.time.get_ticks() > self.invincibility_end_time:
             self.invincibility_end_time = None
         if self.double_damage_end_time and pygame.time.get_ticks() > self.double_damage_end_time:
-            self.damage = 2
+            self.double_damage = self.damage * 2 
             self.double_damage_end_time = None
         if self.rapid_fire_end_time and pygame.time.get_ticks() > self.rapid_fire_end_time:
             self.shoot_interval = 200
             self.unlimited_arrows = False  # Disable unlimited arrows
             self.rapid_fire_end_time = None
- # Handle shooting when spacebar is held down
+
     def handle_shooting(self, keys):
         if keys[pygame.K_SPACE]:
-            #
             now = pygame.time.get_ticks()
-            # Check if the player has rapid fire power-up and if the shoot interval has passed
             if now - self.last_shot_time >= self.shoot_interval:
                 self.shoot_laser()
                 self.last_shot_time = now

@@ -22,10 +22,10 @@ def handle_castle_laser_collision(player, castle, stardust_manager, castle_laser
         laser_rect = pygame.Rect(laser['pos'][0], laser['pos'][1], 5, 5)
         adjusted_castle_hitbox = pygame.Rect(castle.position[0], castle.position[1], castle.size[0], castle.size[1])
         if adjusted_castle_hitbox.colliderect(laser_rect):
-            castle.take_damage(2)
+            castle.take_damage(laser['damage'])
             player.lasers.remove(laser)
             direction_vector = (player.position[0] - castle.position[0], player.position[1] - castle.position[1])
-            distance = math.sqrt(direction_vector[0]**2 + direction_vector[1]**2)
+            distance = math.sqrt(direction_vector[0] ** 2 + direction_vector[1] ** 2)
             normalized_direction = (direction_vector[0] / distance, direction_vector[1] / distance)
             castle_lasers.append({'pos': list(castle.position), 'dir': normalized_direction})
         if castle.health <= 0:
@@ -60,7 +60,7 @@ def handle_player_laser_collision_with_wizard(player, wizard_manager):
             laser_rect = pygame.Rect(laser['pos'][0], laser['pos'][1], 5, 5)
             wizard_hitbox = pygame.Rect(wizard.position[0] - wizard.size, wizard.position[1] - wizard.size, wizard.size * 2, wizard.size * 2)
             if wizard_hitbox.colliderect(laser_rect):
-                wizard.take_damage(5)
+                wizard.take_damage(laser['damage'])
                 player.lasers.remove(laser)
             if wizard.health <= 0:
                 gain_experience(player, 5)
@@ -151,9 +151,9 @@ def main():
             keys = pygame.key.get_pressed()
             player.handle_movement(keys, castle.position, CASTLE_SIZE)
             player.check_collisions(stardust_manager)
-            player.handle_laser_movement(stardust_manager)
+            player.handle_laser_movement(stardust_manager, wizard_manager, castle)
             player.update_status()
-            player.handle_shooting(keys)  # Handle shooting when spacebar is held down
+            player.handle_shooting(keys)
             stardust_manager.spawn_star_dust()
             wizard_manager.update(castle.position, CASTLE_SIZE)
             handle_castle_laser_collision(player, castle, stardust_manager, castle_lasers)

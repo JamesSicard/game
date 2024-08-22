@@ -14,9 +14,20 @@ class Castle:
         """
         self.playable_area_size = playable_area_size
         self.size = castle_size
-        self.max_health = 25
+        self.max_health = 50
         self.health = self.max_health
         self.position = self.generate_random_position()
+
+    def collides_with(self, pos):
+        """
+        Checks if the castle collides with a given position (e.g., a laser position).
+        Args:
+            pos: The position to check for collision.
+        Returns:
+            bool: True if the castle collides with the position, False otherwise.
+        """
+        castle_rect = pygame.Rect(self.position[0], self.position[1], self.size[0], self.size[1])
+        return castle_rect.collidepoint(pos)
 
     def generate_random_position(self):
         """
@@ -25,33 +36,17 @@ class Castle:
         Returns:
             list: A list containing the x and y coordinates.
         """
-        # Generate a random position for the castle can not be placed over the player
         margin = 10
         x = random.randint(margin, self.playable_area_size - self.size[0] - margin)
         y = random.randint(margin, self.playable_area_size - self.size[1] - margin)
         return [x, y]
-    #check player position
-    def generate_random_position(self):
-        """
-        Generates a random position for the castle within the playable area.
 
-        Returns:
-            list: A list containing the x and y coordinates.
-        """
-        x = random.randint(0, self.playable_area_size - self.size[0])
-        y = random.randint(0, self.playable_area_size - self.size[1])
-            #if position is over player, generate new position
-        if x > 400 and x < 600 and y > 400 and y < 600:
-            return self.generate_random_position()
-        else:
-            return [x, y]
-    
     def take_damage(self, amount):
         """
         Reduces the castle's health by the specified amount.
-        
+    
         Args:
-            amount (int): The amount of damage to take.
+        amount (int): The amount of damage to take.
         """
         self.health = max(self.health - amount, 0)
 

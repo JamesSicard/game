@@ -1,4 +1,4 @@
-# castle/wizard_manager.py
+# wizard_manager.py
 import pygame
 import random
 from wizard import Wizard
@@ -14,12 +14,10 @@ class WizardManager:
 
     def update(self, castle_pos, castle_size):
         now = pygame.time.get_ticks()
-        # Maintain the number of wizards according to the player's level
         if len(self.wizards) < self.player.current_level and now - self.last_spawn_time >= self.respawn_delay:
             self.wizards.append(Wizard(self.playable_area_size, self.player, self.stardust_manager))
             self.last_spawn_time = now
         
-        # Update each wizard
         for wizard in self.wizards:
             wizard.update(castle_pos, castle_size)
 
@@ -31,6 +29,16 @@ class WizardManager:
         for wizard in self.wizards[:]:
             if wizard.health <= 0:
                 self.wizards.remove(wizard)
+
+    def check_laser_collision(self, laser_pos, laser_damage):
+        wizard_hit = False
+        for wizard in self.wizards[:]:
+            if wizard.collides_with(laser_pos):
+                wizard.take_damage(laser_damage)
+                wizard_hit = True
+                if wizard.health <= 0:
+                    self.wizards.remove(wizard)
+        return wizard_hit
 
     def reset(self):
         self.wizards = []
